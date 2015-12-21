@@ -4,10 +4,12 @@ import _ from 'lodash';
 import File from 'vinyl';
 import gulp from 'gulp';
 import merge from 'merge-stream';
-import sprity from 'sprity';
-import svgSprite from 'gulp-svg-sprite';
+//import sprity from 'sprity';
+//import svgSprite from 'gulp-svg-sprite';
 import through2 from 'through2';
+import iconfont from 'gulp-iconfont';
 import { humanize, titleize } from 'underscore.string';
+import iconfontCss from 'gulp-iconfont-css';
 
 
 /** Names of directories containing icons. */
@@ -43,47 +45,67 @@ const PNG_COLORS = [
  *
  * TODO(shyndman): Add support for double density sprites.
  */
-gulp.task('png-sprites', () =>
-  _(getCategoryColorPairs())
-    .map(([ category, color ]) =>
-      sprity.src({
-        src: `./${ category }/1x_web/*_${ color }_24dp.png`,
-        style: `sprite-${ category }-${ color }.css`,
-        name: `sprite-${ category }-${ color }`,
-        engine: 'sprity-gm',
-        orientation: 'left-right'
-      }))
+//gulp.task('png-sprites', () =>
+//  _(getCategoryColorPairs())
+//    .map(([ category, color ]) =>
+//      sprity.src({
+//        src: `./${ category }/1x_web/*_${ color }_24dp.png`,
+//        style: `sprite-${ category }-${ color }.css`,
+//        name: `sprite-${ category }-${ color }`,
+//        engine: 'sprity-gm',
+//        orientation: 'left-right'
+//      }))
+//    .thru(merge)
+//    .value()
+//    .pipe(gulp.dest('./sprites/css-sprite/')));
+
+gulp.task('iconfont', function () {
+  var s = _(ICON_CATEGORIES)
+    .map(function(category) {
+      return gulp.src(`./${ category }/svg/production/*_24px.svg`)
+    })
     .thru(merge)
     .value()
-    .pipe(gulp.dest('./sprites/css-sprite/')));
+    .pipe(iconfontCss({
+      fontName: 'Material Icons',
+      path: 'templates/_icons.css',
+      fontPath: '../fonts/',
+      cssClass: 'mi'
+    }))
+    .pipe(iconfont({
+      fontName: 'Material Icons',
+      formats: ['ttf', 'eot', 'woff']
+    }))
+    .pipe(gulp.dest('./webfont/'))
+});
 
 
 /**
  * Generates CSS and Symbol-based SVG sprites for each category, and places
  * them in `sprites/svg-sprite`.
  */
-gulp.task('svg-sprites', () =>
-  _(ICON_CATEGORIES)
-    .map((category) =>
-      gulp.src(`./${ category }/svg/production/*_24px.svg`)
-        .pipe(svgSprite(getSvgSpriteConfig(category))))
-    .thru(merge)
-    .value()
-    .pipe(gulp.dest('./sprites/svg-sprite')));
+//gulp.task('svg-sprites', () =>
+//  _(ICON_CATEGORIES)
+//    .map((category) =>
+//      gulp.src(`./${ category }/svg/production/*_24px.svg`)
+//        .pipe(svgSprite(getSvgSpriteConfig(category))))
+//    .thru(merge)
+//    .value()
+//    .pipe(gulp.dest('./sprites/svg-sprite')));
 
 
 /**
  * Generates a file to allow the consumption of the icon font by Iconjar
  * (http://geticonjar.com/).
  */
-gulp.task('iconjar', () =>
-  gulp.src('./iconfont/codepoints')
-    .pipe(generateIjmap('MaterialIcons-Regular.ijmap'))
-    .pipe(gulp.dest('./iconfont/')));
+//gulp.task('iconjar', () =>
+//  gulp.src('./iconfont/codepoints')
+//    .pipe(generateIjmap('MaterialIcons-Regular.ijmap'))
+//    .pipe(gulp.dest('./iconfont/')));
 
 
 /** Runs all tasks. */
-gulp.task('default', ['png-sprites', 'svg-sprites', 'iconjar']);
+//gulp.task('default', ['png-sprites', 'svg-sprites', 'iconjar']);
 
 
 /**
@@ -157,9 +179,12 @@ function getSvgSpriteConfig(category) {
  * Returns the catesian product of categories and colors.
  */
 function getCategoryColorPairs() {
-  return _(ICON_CATEGORIES)
+  let out = _(ICON_CATEGORIES)
     .map((category) =>
       _.zip(_.times(PNG_COLORS.length, () => category), PNG_COLORS))
     .flatten() // flattens 1 level
     .value();
+  //console.log('out is', out);
+  return out
 }
+
